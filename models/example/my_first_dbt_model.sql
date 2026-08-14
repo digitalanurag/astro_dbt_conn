@@ -1,27 +1,27 @@
-
-/*
-    Welcome to your first dbt model!
-    Did you know that you can also configure models directly within SQL files?
-    This will override configurations stated in dbt_project.yml
-
-    Try changing "table" to "view" below
-*/
-
-{{ config(materialized='table') }}
-
-with source_data as (
-
-    select 1 as id
-    union all
-    select null as id
-
+{{ config(
+    materialized='incremental',
+    unique_key='id'
+) }}
+ 
+select
+    id,
+    created_at,
+    current_timestamp() as dbt_loaded_at,
+ 
+    datediff(
+        'second',
+        created_at,
+        current_timestamp()
+    ) as wait_time_seconds
+ 
+from DBT_DB.CORE.ASTRO_TASK_AUDIT
+ 
+{% if is_incremental() %}
+ 
+where task_value >
+(
+    select coalesce(max(id), 0)
+    from {{ this }}
 )
-
-select *
-from source_data
-
-/*
-    Uncomment the line below to remove records with null `id` values
-*/
-
--- where id is not null
+ 
+{% endif %}
