@@ -1,18 +1,16 @@
 {{ config(
-    materialized='incremental',
-    unique_key='id'
+    materialized='table'
 ) }}
  
 SELECT
-    CAST(ID AS NUMBER(38,0)) AS ID,
-    CREATED_AT
+    COUNT(*) AS ROW_COUNT,
+    MAX(CREATED_AT) AS SNOWFLAKE_LAST_INSERT_TIME,
+    CURRENT_TIMESTAMP() AS DBT_RUN_TIME,
+ 
+    DATEDIFF(
+        'second',
+        MAX(CREATED_AT),
+        CURRENT_TIMESTAMP()
+    ) AS WAIT_TIME_SECONDS
+ 
 FROM DBT_DB.CORE.ASTRO_TASK_TEST
- 
-{% if is_incremental() %}
- 
-WHERE ID > (
-    SELECT COALESCE(MAX(ID), 0)
-    FROM {{ this }}
-)
- 
-{% endif %}
