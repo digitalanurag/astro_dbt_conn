@@ -1,25 +1,16 @@
 {{ config(
     materialized='incremental',
-    unique_key='ID'
+    unique_key='id'
 ) }}
  
 SELECT
-    ID,
-    CREATED_AT,
-    CURRENT_TIMESTAMP() AS DBT_LOADED_AT,
- 
-    DATEDIFF(
-        'second',
-        CREATED_AT,
-        CURRENT_TIMESTAMP()
-    ) AS WAIT_TIME_SECONDS
- 
+    CAST(ID AS NUMBER(38,0)) AS ID,
+    CREATED_AT
 FROM DBT_DB.CORE.ASTRO_TASK_TEST
  
 {% if is_incremental() %}
  
-WHERE ID >
-(
+WHERE ID > (
     SELECT COALESCE(MAX(ID), 0)
     FROM {{ this }}
 )
